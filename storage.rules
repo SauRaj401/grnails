@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow uploads to booking-specific folders (images only, <= 3MB).
+    match /bookings/{bookingReference}/{fileName=**} {
+      allow write: if request.resource != null
+                   && request.resource.size < 3 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+
+      // Only admins can read stored screenshots.
+      allow read: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // Deny by default for other paths.
+  }
+}
