@@ -62,7 +62,6 @@ const STUDIO = {
   phone: "+61 475 182 307",
   phoneHref: "tel:+61475182307",
   email: "info@grnails.com.au",
-  whatsapp: "61475182307",
   payId: "0475 182 307",
   payIdName: "Gita Kumari Shahi",
   bsb: "063-788",
@@ -824,23 +823,6 @@ function BookingCart({
         notes,
       });
       console.log("[BookingCart] Booking saved successfully. Ref: " + bookingRef);
-
-      // Then open WhatsApp
-      const msg =
-        `*New booking — GR Nails*%0A` +
-        `Ref: ${bookingRef}%0A%0A` +
-        `Name: ${encodeURIComponent(name)}%0A` +
-        `Phone: ${encodeURIComponent(phone)}%0A` +
-        `Email: ${encodeURIComponent(email || "—")}%0A` +
-        `Date: ${encodeURIComponent(dateStr)}%0A` +
-        `Time: ${encodeURIComponent(time)}%0A%0A` +
-        `Services:%0A${lineText}%0A%0A` +
-        `Total: $${total}%0A` +
-        `Payment ref: ${encodeURIComponent(paymentRef)}%0A` +
-        `Screenshot: ${encodeURIComponent(screenshot?.name || "—")}%0A%0A` +
-        `Notes: ${encodeURIComponent(notes || "—")}`;
-      const url = `https://wa.me/${STUDIO.whatsapp}?text=${msg}`;
-      globalThis.open(url, "_blank");
       setSubmitted(true);
     } catch (error) {
       const errorMsg =

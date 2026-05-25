@@ -1,9 +1,9 @@
 # Firestore Persistence Testing Guide
 
 ## Prerequisites
-1. Admin user created in Firebase Authentication console (email + password)
-2. Custom claim `admin: true` assigned to admin user
-3. Firestore and Storage security rules deployed
+1. Firestore security rules deployed to the active Firebase project
+2. Admin user created in Firebase Authentication console (email + password)
+3. Custom claim `admin: true` assigned to admin user for dashboard access
 
 ## Quick Testing Steps
 
@@ -26,6 +26,8 @@ Opens http://localhost:5173
 - Booking reference appears in UI
 - **Firestore Console:** New document in `bookings` collection with your reference ID
 - **Storage Console:** Screenshot file in `bookings/{reference}/` folder
+
+Public booking creation does not require Firebase Authentication. Only admin dashboard reads and edits require the `admin: true` custom claim.
 
 ### 3. Test Admin Login (Firebase Auth)
 - Navigate to http://localhost:5173/admin/login

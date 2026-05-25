@@ -1,8 +1,7 @@
 import { spawn } from "node:child_process";
 
-const phpPort = process.env.PHP_BACKEND_PORT || "8000";
-const phpHost = process.env.PHP_BACKEND_HOST || "127.0.0.1";
-const phpBackendUrl = process.env.PHP_BACKEND_URL || `http://${phpHost}:${phpPort}`;
+const phpBackendUrl =
+  process.env.PHP_BACKEND_URL || process.env.VITE_PHP_BACKEND_URL || "http://127.0.0.1:80";
 
 function startProcess(command, args, label, extraEnv = {}) {
   const child = spawn(command, args, {
@@ -28,13 +27,6 @@ function startProcess(command, args, label, extraEnv = {}) {
   return child;
 }
 
-console.log(`[dev] Starting PHP backend on ${phpBackendUrl}`);
-const phpServer = startProcess(
-  "php",
-  ["-S", `${phpHost}:${phpPort}`, "-t", "."],
-  "php",
-);
-
 console.log("[dev] Starting Vite on http://localhost:5173");
 const viteServer = startProcess("vite", ["dev"], "vite", {
   PHP_BACKEND_URL: phpBackendUrl,
@@ -42,7 +34,6 @@ const viteServer = startProcess("vite", ["dev"], "vite", {
 });
 
 const shutdown = () => {
-  phpServer.kill();
   viteServer.kill();
 };
 

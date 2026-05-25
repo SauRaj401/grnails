@@ -4,20 +4,19 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
-const phpBackendTarget = process.env.VITE_PHP_BACKEND_URL || process.env.PHP_BACKEND_URL;
+const phpBackendTarget =
+	process.env.VITE_PHP_BACKEND_URL || process.env.PHP_BACKEND_URL || "http://127.0.0.1:80";
 
 export default defineConfig({
 	plugins: [tanstackRouter(), react(), tailwindcss(), tsconfigPaths()],
 	server: {
-		proxy: phpBackendTarget
-			? {
-				"/api": {
-					target: phpBackendTarget,
-					changeOrigin: true,
-					secure: false,
-				},
-			}
-			: undefined,
+		proxy: {
+			"/api": {
+				target: phpBackendTarget,
+				changeOrigin: true,
+				secure: false,
+			},
+		},
 	},
 	build: {
 		outDir: "dist",

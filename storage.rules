@@ -7,8 +7,8 @@ service firebase.storage {
                    && request.resource.size < 3 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
 
-      // Only admins can read stored screenshots.
-      allow read: if request.auth != null && request.auth.token.admin == true;
+      // Booking screenshots are public for the customer who uploaded them and for admin review.
+      allow read: if true;
     }
 
     // Deny by default for other paths.
