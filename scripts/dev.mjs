@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 
 const phpBackendUrl =
-  process.env.PHP_BACKEND_URL || process.env.VITE_PHP_BACKEND_URL || "http://127.0.0.1:80";
+  process.env.PHP_BACKEND_URL || process.env.VITE_PHP_BACKEND_URL || "http://localhost";
 
 function startProcess(command, args, label, extraEnv = {}) {
   const child = spawn(command, args, {

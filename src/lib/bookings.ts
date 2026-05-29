@@ -8,6 +8,7 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
+import emailjs from "@emailjs/browser";
 import { firestoreDb } from "@/lib/firebase";
 
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
@@ -68,8 +69,13 @@ type BookingScreenshotUploadResponse = BookingScreenshotUploadResult & {
 };
 
 const BOOKINGS_COLLECTION = "bookings";
-const PAYMENT_SCREENSHOT_UPLOAD_URL =
-  import.meta.env.VITE_PAYMENT_SCREENSHOT_UPLOAD_URL || "/api/upload_payment_screenshot.php";
+const PAYMENT_SCREENSHOT_UPLOAD_URL = "/api/upload_payment_screenshot.php";
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_5qwr82j";
+const EMAILJS_ADMIN_TEMPLATE_ID =
+  import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID || "template_apzhnhq";
+const EMAILJS_CUSTOMER_TEMPLATE_ID =
+  import.meta.env.VITE_EMAILJS_CUSTOMER_TEMPLATE_ID || "template_4uohncs";
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "ksEdGRigK813l7bs7";
 
 export function listenToBookings(
   onChange: (bookings: Array<BookingRecord & { id: string }>) => void,
@@ -166,14 +172,105 @@ export async function createBooking(data: BookingFormData) {
   try {
     console.log(`[Booking] Writing to Firestore:`, payload);
     const docRef = await addDoc(collection(firestoreDb, BOOKINGS_COLLECTION), payload);
+    const booking = { id: docRef.id, ...payload };
+
     console.log(`[Booking] Successfully saved to Firestore with ID: ${docRef.id}`);
-    return { id: docRef.id, ...payload };
+    await sendBookingConfirmationEmails(booking);
+
+    return booking;
   } catch (firestoreError) {
     console.error(`[Booking] Firestore write failed:`, firestoreError);
     throw new Error(
       `Failed to save booking: ${firestoreError instanceof Error ? firestoreError.message : "Unknown error"}`,
     );
   }
+}
+
+async function sendBookingConfirmationEmails(booking: BookingRecord & { id: string }) {
+  if (!EMAILJS_PUBLIC_KEY) {
+    console.warn("[Booking] EmailJS public key is missing; skipping confirmation emails.");
+    return;
+  }
+
+  const commonParams = buildBookingEmailParams(booking);
+  const failures: unknown[] = [];
+
+  try {
+    await sendAdminConfirmationEmail(commonParams);
+  } catch (error) {
+    failures.push(error);
+  }
+
+  if (booking.email) {
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_CUSTOMER_TEMPLATE_ID,
+        {
+          ...commonParams,
+          email: booking.email,
+          customer_email: booking.email,
+          to_email: booking.email,
+        },
+        EMAILJS_PUBLIC_KEY,
+      );
+      console.log("[Booking] Customer confirmation email sent successfully.");
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+
+  if (failures.length > 0) {
+    console.warn("[Booking] One or more confirmation emails failed to send.", failures);
+  } else {
+    console.log("[Booking] Confirmation emails sent successfully.");
+  }
+}
+
+async function sendAdminConfirmationEmail(
+  commonParams: ReturnType<typeof buildBookingEmailParams>,
+) {
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_ADMIN_TEMPLATE_ID,
+    commonParams,
+    EMAILJS_PUBLIC_KEY,
+  );
+  console.log("[Booking] Admin confirmation email sent successfully.");
+}
+
+function buildBookingEmailParams(booking: BookingRecord & { id: string }) {
+  const serviceLines = booking.services
+    .map(
+      (service) => `${service.name} x${service.qty} = $${(service.price * service.qty).toFixed(2)}`,
+    )
+    .join("\n");
+
+  return {
+    booking_id: booking.id,
+    booking_reference: booking.reference,
+    reference: booking.reference,
+    customer_name: booking.name,
+    name: booking.name,
+    customer_email: booking.email,
+    email: booking.email,
+    customer_phone: booking.phone,
+    phone: booking.phone,
+    booking_date: booking.date || "",
+    booking_time: booking.time || "",
+    services_summary: serviceLines,
+    services_json: JSON.stringify(booking.services),
+    service_count: String(booking.services.length),
+    total: booking.total.toFixed(2),
+    payment_reference: booking.paymentRef || "",
+    notes: booking.notes || "",
+    screenshot_name: booking.screenshotName || "",
+    screenshot_url: booking.screenshotUrl || "",
+    screenshot_path: booking.screenshotPath || "",
+    status: booking.status,
+    created_at: booking.createdAt,
+    updated_at: booking.updatedAt,
+  };
 }
 
 export async function updateBooking(id: string, patch: Partial<BookingRecord>) {

@@ -5,7 +5,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 const phpBackendTarget =
-	process.env.VITE_PHP_BACKEND_URL || process.env.PHP_BACKEND_URL || "http://127.0.0.1:80";
+	process.env.VITE_PHP_BACKEND_URL || process.env.PHP_BACKEND_URL || "http://localhost";
 
 export default defineConfig({
 	plugins: [tanstackRouter(), react(), tailwindcss(), tsconfigPaths()],
